@@ -1,4 +1,4 @@
-int count = 0;
+int count = 0,right = 1,left =0;
 
 #define R 0
 #define L 1 
@@ -30,14 +30,33 @@ void ledON(){
 void loop(){
   
    if (analogRead(L) <=600){
-    count = count + 1;
+    right =0;
+    left++;
+    count++;
    }     
    else if (analogRead(R) <=600){
-    count = count - 1;
+    left = 0;
+    right++;
    }
-
+   if (right >= 1){moveright();}
+   if (left>=1){moveleft();}
+}
+ void moveright(){
+   count--;
    if (count >= 0 && count <= 8){
-   Serial.println(analogRead(VR));
+   ledON();
+   }
+   else if ( count > 8){
+    count = 0;
+   }
+   else if (count < 0){
+     count = 8;
+   }
+   
+}
+void moveleft(){
+   count++;
+   if (count >= 0 && count <= 8){
    ledON();
    }
    else if ( count > 8){
