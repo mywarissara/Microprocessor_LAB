@@ -6,7 +6,7 @@
 #define SS_2 9
 #define btnIn 2
 #define btnDe 3
-#define btnCount 4
+#define btnSt 4
 #define buzzer 5
 #define a  0b00000001
 #define b  0b00000010
@@ -29,8 +29,8 @@
 #define num9 a | b | c | d | f | g
 
 unsigned char num[10] = {num0, num1, num2, num3, num4, num5, num6, num7, num8, num9};
-int count = 0, number=0,unit =0,counter=0,unit1,unit2;
-bool In, De,flag=1;
+uint8_t count = 0, number=0,unit =0,counter=0,unit1,unit2;
+bool in, de,st, flag=1;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -41,7 +41,7 @@ void setup() {
   pinMode(buzzer, OUTPUT);
   pinMode(btnIn, INPUT_PULLUP);
   pinMode(btnDe, INPUT_PULLUP);
-  pinMode(btnCount, INPUT_PULLUP);
+  pinMode(btnSt, INPUT_PULLUP);
 }
 
 void loop() {
@@ -63,62 +63,78 @@ void spi_2(unsigned char cData){
   digitalWrite(SS_2, 0);
 }
 void de_number(){
-  if (counter == 0){ counter = 99;}
    unit2 = num[count];
    unit = counter / 10;
    unit = floor(unit);
    unit1 = num[unit];
-   if (unit <= 9 && count < 9){
+  if (counter <= 0 ){
+    counter = 0;
+    spi_1(unit1);
+    spi_2(unit2);
+    digitalWrite(buzzer,1);
+  }
+   else if (unit <= 9 && count < 9){
     spi_1(unit1);
     spi_2(unit2);
     count--;
+    counter--;
    }
    else if(count<=0){
     count = 9;
     spi_1(unit1);
     spi_2(unit2);
+    
    }
-   else{
-    counter = 0;
-    digitalWrite(buzzer,1);
+   else if(count>=9){
+    count = 0;
+    spi_1(unit1);
+    spi_2(unit2);
    }
-  counter--;
+  
 }
 void in_number(){
    unit2 = num[count];
    unit = counter / 10;
    unit = floor(unit);
    unit1 = num[unit];
-    
    if (unit <= 9 && count < 9){
     spi_1(unit1);
     spi_2(unit2);
     count++;
    }
    else if(count>=9){
-    count = 9;
+    count = 0;
     spi_1(unit1);
     spi_2(unit2);
    }
-   else{
+   else if (count >= 9 && unit ==9){
     counter = 0;
+    spi_1(unit1);
+    spi_2(unit2);
     digitalWrite(buzzer,1);
+     
    }
   counter++;
 }
+
+
 void switchOn(){
-  In = digitalRead(btnIn);
-  De = digitalRead(btnDe);
-  //Serial.println();
-  Serial.println(counter);
-  if (In == 0 && flag == 1){
-    flag = 0;
+ in = digitalRead(btnIn);
+ de = digitalRead(btnDe);
+ st = digitalRead(btnSt);
+  if (in == 0 ){
     in_number();
   }
-  else if(De == 0 && flag == 1){
-    flag = 0;
+  else if (de ==0 ){
     de_number();
   }
-  else if (De == 1 && In == 1){
-    flag = 1;}
+  if (st == 0 && flag == 1){
+    de_number();
+    flag =0;
+  }
+  if (st == 0 && flag == 0){
+    spi_1(unit1);
+    spi_2(unit2);
+    flag = 1;
+  }
 }
