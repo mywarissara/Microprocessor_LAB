@@ -12,7 +12,9 @@ void setup()
   counter = 256;
   TCNT1 = counter;
   TCCR1B |= (1 << CS12); // 256 / 1 sec
+  // TCC register = 0 0 0 0 0 0 0 1
   TIMSK1 |= (1 << TOIE1);
+  // interrupt mask register = set up T0IE1 to be 1 =  0 0 0 0 0 0 0 1
   interrupts();
 }
 
