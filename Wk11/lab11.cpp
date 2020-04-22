@@ -29,8 +29,8 @@ void setup()
   Serial.begin(9600);
 }
 int errord = 0;
-float kp = 1.0;
-float ki = 0.01;
+float kp = 0.3;
+float ki = 0.07;
 float kd = 0.1;
 void loop()
 {
