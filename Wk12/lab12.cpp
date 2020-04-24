@@ -30,19 +30,29 @@ void setup()
 }
 int errord = 0;
 float kp = 0.3;
-float ki = 9.5;
-float kd = 0.3;
+float ki = 0.07;
+float kd = 0.1;
+float rpm_target = 0;
+float rpm_now = 0;
+int speed;
 void loop()
 {
   seconds1 = millis();
-  float error_now = getvalue - count;
+  float error_now = getvalue - count; // position control
   float pid_i = error_now*(seconds1 - seconds0)/1000;
   float pid_d = (error_now - errord)/(seconds1 - seconds0)/1000;
   int pid = (kp*error_now) + (ki*pid_i) + (kd*pid_d);
   setSpeed(pid); // pid = -255 --> 255
 
   getValue_function();
-
+  //rpm_target = getvalue/60; // speed control
+  //rpm_now = (count/100)/(seconds1/1000/60);
+  //float error_now = rpm_target - rpm_now; // speed control
+  //float pid_i = error_now*(seconds1 - seconds0)/1000;
+  //float pid_d = (error_now - errord)/(seconds1 - seconds0)/1000;
+  //int pid = (kp*error_now) + (ki*pid_i) + (kd*pid_d);
+  //setSpeed(pid);
+  
   Serial.print(getvalue);
   Serial.print(",");
   Serial.println(count);
@@ -58,7 +68,9 @@ void getValue_function(){
         getvalue = inString.toInt();
         Serial.println(getvalue);
   }
-  getvalue = analogRead(A0);
+  //else{
+  //  getvalue = analogRead(A0);
+  //}
 }
 void a_callback(){
     if (digitalRead(interruptA)==1 && digitalRead(interruptB) == 0){
