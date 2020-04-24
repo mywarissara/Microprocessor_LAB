@@ -32,11 +32,12 @@ int errord = 0;
 float kp = 0.3;
 float ki = 9.5;
 float kd = 0.3;
+float pid_i = 0;
 void loop()
 {
   seconds1 = millis();
   float error_now = getvalue - count;
-  float pid_i = error_now*(seconds1 - seconds0)/1000;
+  pid_i += error_now*(seconds1 - seconds0)/1000;
   float pid_d = (error_now - errord)/(seconds1 - seconds0)/1000;
   int pid = (kp*error_now) + (ki*pid_i) + (kd*pid_d);
   setSpeed(pid); // pid = -255 --> 255
