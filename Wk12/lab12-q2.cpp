@@ -6,21 +6,21 @@
 int interruptA = 2;
 int interruptB = 3;
 int delay_count = 0;
-int getvalue = 1;
+int getvalue = -100;
 int count = 0;
 bool dir = 0; // 0 cw 1 ccw
 int errord = 0;
-float kp = 2.0;
-float ki = 0;
-float kd = 0;
+float kp = 1;
+float ki = 0.01;
+float kd = 3;
 float rpm_target = 0;
 float rpm_now = 0;
 float pid_i=0;
 int speed;
-int rpm = 0;
+String buff, inString;
+unsigned long rpm = 0;
 volatile float timer1_ovf;
-String buff;
-String setpointStr;
+
 unsigned long seconds0 = 0, seconds1 = 0;
 void setup()
 {
@@ -28,18 +28,17 @@ void setup()
   pinMode(MOTOR_D1_PIN,OUTPUT); 
   pinMode(MOTOR_D2_PIN,OUTPUT); 
   pinMode(MOTOR_PWM_PIN,OUTPUT);
-  
-  pinMode(9, INPUT);
-  pinMode(10, INPUT);
-  pinMode(4, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(A0, INPUT);
   
   pinMode(interruptA, INPUT_PULLUP);
   pinMode(interruptB, INPUT_PULLUP);
   
   attachInterrupt(digitalPinToInterrupt(interruptA), 
                   a_callback, RISING);
- 
-
+  
+  attachInterrupt(digitalPinToInterrupt(interruptB), 
+                  b_callback, RISING);
   TCCR1A = 0; // initialize timer1
   TCCR1B = 0; //mode 0
 
@@ -53,18 +52,12 @@ void setup()
 
 void loop(){
   getValue_function();
-  if (rpm != 0){
-    digitalWrite(4,1);
-  }
-  else{
-    digitalWrite(4,0);
-  }
-  
-  delay(500);
+  //delay(100);
   
 }
 void getValue_function(){
-  char inByte = Serial.read();
+  while (Serial.available()){
+      char inByte = Serial.read();
     if(inByte == 's'&& buff.length() == 0){buff += inByte;}
     if(inByte == '-'&& buff.length() == 1){buff += inByte;}
     if(('0'<= inByte) && (inByte <= '9')){buff += inByte;}
@@ -74,38 +67,37 @@ void getValue_function(){
       {
         for(int i=1;i<buff.length();i++)
         {
-         if(('0'<= buff[i]) && (buff[i] <= '9')){setpointStr += buff[i];} 
+         if(('0'<= buff[i]) && (buff[i] <= '9')){inString += buff[i];} 
         }
       }
       if(buff[0] == 's' && buff[1] == '-')
       {
         for(int i=1;i<buff.length();i++)
         {
-         if(buff[i] == '-' && setpointStr == ""){setpointStr += buff[i];} 
-         if(('0'<= buff[i]) && (buff[i] <= '9')){setpointStr += buff[i];}
+         if(buff[i] == '-' && inString == ""){inString += buff[i];} 
+         if(('0'<= buff[i]) && (buff[i] <= '9')){inString += buff[i];}
         }
       }
-      
-      int temp_speed = setpointStr.toInt();
-      getvalue = map(temp_speed, -100, 100, -255, 255);
-      
-      if(getvalue > 255){
-        getvalue = 255;
-      }
-      if(getvalue < -255){
-        getvalue = -255;
-      }
-      buff = "";
-      setpointStr = "";
-      Serial.println(getvalue);
-      
+    }
+    getvalue = inString.toInt();
+       // Serial.println(getvalue);
   }
+  //else{
+  //  getvalue = analogRead(A0);
+  //}
 }
 void a_callback(){
-  if (!digitalRead(interruptB)){count++;}
-  else if(digitalRead(interruptB)){count--;}
+    if (digitalRead(interruptA)==1 && digitalRead(interruptB) == 0){
+        count++;
+        digitalWrite(6,0); // turn off led
+    }
 }
-
+void b_callback(){
+    if (digitalRead(interruptA)==0 && digitalRead(interruptB) == 1){
+        count--;
+        digitalWrite(6,1); // led turn on
+    }
+}
 void moveForward(int speed) {
     digitalWrite(MOTOR_D1_PIN,HIGH);
     digitalWrite(MOTOR_D2_PIN,LOW); 
@@ -138,30 +130,16 @@ void setSpeed(int speed) {
 
 ISR(TIMER1_OVF_vect)
 {
-  
-  bool cw_read = digitalRead(9); // cw dir = 0
-  bool ccw_read = digitalRead(10); // ccw dir =1
-   
-  if (!cw_read){getvalue = -1*abs(getvalue);}
-  if (!ccw_read){getvalue = abs(getvalue);}
   //seconds1 = millis();
   rpm = (count*6000/226*(0.01));
   
-  float error_now = getvalue - rpm; //  error
+  float error_now = abs(getvalue) - rpm; //  error
   pid_i += error_now*0.01;
   float pid_d = (error_now - errord)/0.01;
   int pid = (kp*error_now) + (ki*pid_i) + (kd*pid_d);
-  if(pid > 255)
-  {
-    pid = 255;
-  }
-    if(pid < -255)
-  {
-    pid = -255;
-  }
   
-  setSpeed(pid); 
-  
+  getvalue < 0? pid = pid : pid = -pid;
+  setSpeed(-pid); 
   //seconds0 = seconds1;
   errord = error_now;
   
